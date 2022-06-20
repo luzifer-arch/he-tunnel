@@ -1,0 +1,12 @@
+[Unit]
+Description=he.net IPv6 tunnel
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/he-tunnel start
+ExecStop=/usr/bin/he-tunnel stop
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+
+DEFAULT_CFG=/etc/default/he-tunnel
+
+function log() {
+  echo "$@" >&2
+}
+
+[[ -f $DEFAULT_CFG ]] || {
+  echo "Missing default config: ${DEFAULT_CFG}"
+  exit 1
+}
+
+source ${DEFAULT_CFG}
+
+case $1 in
+start)
+  log "Configuring tunnel interface..."
+  /usr/bin/ip tunnel add he-ipv6 mode sit remote ${TUNNEL_REMOTE} local ${TUNNEL_LOCAL} ttl 255
+  /usr/bin/ip link set he-ipv6 up mtu 1480
+  /usr/bin/ip addr add ${TUNNEL_CLIENT_ADDR} dev he-ipv6
+  /usr/bin/ip -6 route add ::/0 dev he-ipv6
+  log "Tunnel interface configured."
+  ;;
+
+stop)
+  log "Removing tunnel interface configuration..."
+  /usr/bin/ip -6 route del ::/0 dev he-ipv6
+  /usr/bin/ip link set he-ipv6 down
+  /usr/bin/ip tunnel del he-ipv6
+  log "Tunnel interface removed."
+  ;;
+
+update-ip)
+  log "Updating remote IP with tunnel broker..."
+  curl -4 -sSf \
+    -o /dev/null \
+    "https://${UPDATE_USER}:${UPDATE_KEY}@ipv4.tunnelbroker.net/nic/update?hostname=${TUNNEL_ID}"
+  log "IP updated."
+  ;;
+esac
