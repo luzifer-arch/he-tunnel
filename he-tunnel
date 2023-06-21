@@ -14,8 +14,18 @@ function log() {
 
 source ${DEFAULT_CFG}
 
+function update_ip() {
+  log "Updating remote IP with tunnel broker..."
+  curl -4 -sSf \
+    -o /dev/null \
+    "https://${UPDATE_USER}:${UPDATE_KEY}@ipv4.tunnelbroker.net/nic/update?hostname=${TUNNEL_ID}"
+  log "IP updated."
+}
+
 case $1 in
 start)
+  update_ip
+
   log "Configuring tunnel interface..."
   /usr/bin/ip tunnel add he-ipv6 mode sit remote ${TUNNEL_REMOTE} local ${TUNNEL_LOCAL} ttl 255
   /usr/bin/ip link set he-ipv6 up mtu 1480
@@ -32,11 +42,5 @@ stop)
   log "Tunnel interface removed."
   ;;
 
-update-ip)
-  log "Updating remote IP with tunnel broker..."
-  curl -4 -sSf \
-    -o /dev/null \
-    "https://${UPDATE_USER}:${UPDATE_KEY}@ipv4.tunnelbroker.net/nic/update?hostname=${TUNNEL_ID}"
-  log "IP updated."
-  ;;
+update-ip) update_ip ;;
 esac
